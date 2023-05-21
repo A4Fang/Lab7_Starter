@@ -47,21 +47,28 @@ function initializeServiceWorker() {
   // B1. TODO - Check if 'serviceWorker' is supported in the current browser
   if ("serviceWorker" in navigator) {
   // B2. TODO - Listen for the 'load' event on the window object.
-  window.addEventListener("load", (event) => {
-    // B3. TODO - Register './sw.js' as a service worker (The MDN article
-    //            "Using Service Workers" will help you here)    
-  navigator.serviceWorker.register('/sw.js').then(
-    // B4. TODO - Once the service worker has been successfully registered, console
-    //            log that it was successful.
-        (registration) => {
-          console.log("Service worker registration succeeded: ", registration);
-        },
+  window.addEventListener("load", async () => {
+    try {
+      // B3. TODO - Register './sw.js' as a service worker (The MDN article
+      //            "Using Service Workers" will help you here)    
+      const registration = await navigator.serviceWorker.register('sw.js')
+      // B4. TODO - Once the service worker has been successfully registered, console
+      //            log that it was successful.
+      if(registration.installing) {
+        console.log("Service worker installing");
+      }
+      else if(registration.waiting) {
+        console.log("Service worker installed");
+        }
+      else if(registration.active) {
+        console.log("Service worker active");
+      }
+    }
+    catch(err) {
+      console.error(`Registration failed with ${err}`);
+    }
     // B5. TODO - In the event that the service worker registration fails, console
     //            log that it has failed.
-        (error) => {
-          console.error(`Service worker registration failed: ${error}`);
-        }
-      );
   })
   
   } else {
@@ -95,7 +102,7 @@ async function getRecipes() {
   //            function (we call these callback functions). That function will
   //            take two parameters - resolve, and reject. These are functions
   //            you can call to either resolve the Promise or Reject it.
-  return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
   /**************************/
   // A4-A11 will all be *inside* the callback function we passed to the Promise
   // we're returning
@@ -111,7 +118,7 @@ async function getRecipes() {
   //            article on fetch(). NOTE: Fetches are ASYNCHRONOUS, meaning that
   //            you must either use "await fetch(...)" or "fetch.then(...)". This
   //            function is using the async keyword so we recommend "await"
-      let URL = await fetch(RECIPE_URLS[i])
+      let URL = await fetch(RECIPE_URLS[i]);
   // A7. TODO - For each fetch response, retrieve the JSON from it using .json().
   //            NOTE: .json() is ALSO asynchronous, so you will need to use
   //            "await" again
@@ -122,9 +129,9 @@ async function getRecipes() {
   //            if you have, then save the recipes to storage using the function
   //            we have provided. Then, pass the recipes array to the Promise's
   //            resolve() method.
-      if(i == RECIPE_URLS.length - 1) {
-        addRecipesToDocument(recipes);
-        Promise.resolve(RECIPE_URLS);
+      if(recipes.length === RECIPE_URLS.length) {
+        saveRecipesToStorage(recipes);
+        resolve(recipes);
       }
     }
 
@@ -132,11 +139,10 @@ async function getRecipes() {
   // A10. TODO - Log any errors from catch using console.error
   // A11. TODO - Pass any errors to the Promise's reject() function
       console.error(err);
-      Promise.reject();
+      reject(err);
     }
   }
   })
-
 }
 
 /**
